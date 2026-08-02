@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioShield AI — Hornbill Detection Analytics</title>
+    <meta name="description" content="AI-Powered Acoustic Monitoring Network for Hornbill Conservation">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ═══ HEADER ═══ -->
+    <header id="app-header">
+        <div class="header-left">
+            <div class="logo-mark"><i class="fa-solid fa-feather-pointed"></i></div>
+            <span class="logo-text">BioShield<span class="logo-accent">AI</span></span>
+        </div>
+        <div class="header-right">
+            <div class="live-pill" id="live-pill">
+                <span class="live-dot"></span>
+                <span>Live</span>
+            </div>
+            <div class="header-clock" id="header-clock">--:--:--</div>
+        </div>
+    </header>
+
+    <!-- ═══ STATS ROW ═══ -->
+    <section class="stats-row" id="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-dove"></i></div>
+            <div class="stat-body">
+                <span class="stat-number" id="stat-detections">0</span>
+                <span class="stat-label">Total Detections</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon species"><i class="fa-solid fa-leaf"></i></div>
+            <div class="stat-body">
+                <span class="stat-number" id="stat-species">0</span>
+                <span class="stat-label">Species Found</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon accuracy"><i class="fa-solid fa-bullseye"></i></div>
+            <div class="stat-body">
+                <span class="stat-number" id="stat-accuracy">--%</span>
+                <span class="stat-label">Avg. Confidence</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon time"><i class="fa-regular fa-clock"></i></div>
+            <div class="stat-body">
+                <span class="stat-number" id="stat-last-time">--</span>
+                <span class="stat-label">Last Detection</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="main-content">
+        <!-- MAP -->
+        <section class="map-panel">
+            <div class="panel-header">
+                <h2><i class="fa-solid fa-map-location-dot"></i> Detection Map</h2>
+                <span class="coord-display" id="coord-display">Lat: --, Lng: --</span>
+            </div>
+            <div class="map-wrapper">
+                <div id="detection-map"></div>
+            </div>
+        </section>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <!-- Detection Feed -->
+            <section class="sidebar-section feed-section">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-list"></i> Detection Feed</h2>
+                    <span class="feed-count" id="feed-count">0</span>
+                </div>
+                <div class="feed-list" id="feed-list">
+                    <div class="feed-empty">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <p>Waiting for detections...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Suggested Habitats -->
+            <section class="sidebar-section habitats-section">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-tree"></i> Hornbill Habitats</h2>
+                    <span class="habitat-count">10</span>
+                </div>
+                <div class="habitat-list">
+                    <div class="habitat-item" onclick="flyToHabitat(5.5443, 101.4429)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Royal Belum State Park</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Great</span>
+                                <span class="species-tag rare">Helmeted</span>
+                            </div>
+                            <span class="habitat-coords">5.5443° N, 101.4429° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(5.4200, 101.3300)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Temenggor Forest Reserve</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">White-crowned</span>
+                            </div>
+                            <span class="habitat-coords">5.4200° N, 101.3300° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(4.3855, 102.4357)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Taman Negara National Park</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Great</span>
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Black</span>
+                            </div>
+                            <span class="habitat-coords">4.3855° N, 102.4357° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(5.5683, 118.4552)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Kinabatangan River</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Oriental Pied</span>
+                                <span class="species-tag">Wreathed</span>
+                            </div>
+                            <span class="habitat-coords">5.5683° N, 118.4552° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(4.9640, 117.8090)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Danum Valley</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag rare">Helmeted</span>
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Wrinkled</span>
+                            </div>
+                            <span class="habitat-coords">4.9640° N, 117.8090° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(5.1968, 118.5037)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Tabin Wildlife Reserve</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Oriental Pied</span>
+                            </div>
+                            <span class="habitat-coords">5.1968° N, 118.5037° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(4.5500, 115.1600)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Ulu Temburong National Park</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Black</span>
+                                <span class="species-tag">Wreathed</span>
+                            </div>
+                            <span class="habitat-coords">4.5500° N, 115.1600° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(2.5365, 103.3457)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Endau-Rompin National Park</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Great</span>
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Oriental Pied</span>
+                            </div>
+                            <span class="habitat-coords">2.5365° N, 103.3457° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(1.7178, 110.4672)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Bako National Park</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Oriental Pied</span>
+                                <span class="species-tag">Black</span>
+                            </div>
+                            <span class="habitat-coords">1.7178° N, 110.4672° E</span>
+                        </div>
+                    </div>
+                    <div class="habitat-item" onclick="flyToHabitat(4.0480, 114.8120)">
+                        <i class="fa-solid fa-tree habitat-icon-tree"></i>
+                        <div>
+                            <strong>Gunung Mulu National Park</strong>
+                            <div class="habitat-species-tags">
+                                <span class="species-tag">Rhinoceros</span>
+                                <span class="species-tag">Wreathed</span>
+                                <span class="species-tag">Black</span>
+                            </div>
+                            <span class="habitat-coords">4.0480° N, 114.8120° E</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </main>
+
+    <!-- ═══ ALERT TOAST ═══ -->
+    <div class="alert-toast hidden" id="alert-toast">
+        <div class="toast-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <div class="toast-body">
+            <strong id="toast-species">--</strong>
+            <span id="toast-conf">Confidence: --%</span>
+        </div>
+    </div>
+
+    <audio id="alert-chime" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "device_id": "hornbill-gateway-node-01",
+  "location": {
+    "latitude": 4.5975,
+    "longitude": 101.0901,
+    "description": "Temenggor Forest Reserve Canopy, Canopy Level (Layer 3)"
+  },
+  "serial_port": "/dev/ttyACM0",
+  "bluetooth_port": "/dev/rfcomm0",
+  "baud_rate": 115200,
+  "use_ble": true,
+  "server_url": "http://192.168.50.12:3000",
+  "cloud_url": "http://192.168.50.12:3000/api/cloud-mirror",
+  "confidence_threshold": 0.25,
+  "arduino_sound_threshold": 35,
+  "arduino_mac_address": "B4:3A:45:B4:48:4D",
+  "voice_helper_enabled": true,
+  "oled_screen_enabled": true,
+  "edge_impulse": {
+    "api_key": "ei_e93839915960b63bdbb0c29a33afb2100a4758a935faa26f",
+    "category": "training"
+  },
+  "sound_monitoring": {
+    "sample_rate": 48000,
+    "duration_seconds": 5,
+    "db_trigger_threshold": 40
+  },
+  "model_settings": {
+    "model_path": "models/hornbill_audio_classifier.tflite",
+    "labels": [
+      "Background Noise",
+      "Great Hornbill",
+      "Oriental Pied Hornbill",
+      "Rhinoceros Hornbill",
+      "Helmeted Hornbill",
+      "Black Hornbill",
+      "Bushy-crested Hornbill",
+      "Wreathed Hornbill",
+      "White-crowned Hornbill",
+      "Wrinkled Hornbill",
+      "Plain-pouched Hornbill",
+      "Crested Serpent Eagle",
+      "Greater Coucal",
+      "Straw-headed Bulbul"
+    ]
+  }
+}
