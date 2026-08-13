@@ -168,29 +168,45 @@ function formatAbsoluteTime(timestamp) {
 // ══════════════════════════════════════════════════════════
 // LOCATION NAME RESOLVER
 // ══════════════════════════════════════════════════════════
-function getNearestLocationName(lat, lng) {
-    if (!lat || !lng) return null;
+const addressCache = {};
 
+async function fetchAddress(lat, lng) {
+    if (!lat || !lng) return "Unknown Area";
+    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    if (addressCache[key]) return addressCache[key];
+
+    // Fallback to KNOWN_LOCATIONS first
     let closest = null;
     let closestDist = Infinity;
-
     for (const loc of KNOWN_LOCATIONS) {
         const dlat = lat - loc.lat;
         const dlng = lng - loc.lng;
         const dist = Math.sqrt(dlat * dlat + dlng * dlng);
-
         if (dist < loc.radius && dist < closestDist) {
             closest = loc;
             closestDist = dist;
         }
     }
-
     if (closest) {
-        if (closestDist < 0.03) return closest.name;
-        return `Near ${closest.name}`;
+        const addr = closestDist < 0.03 ? closest.name : `Near ${closest.name}`;
+        addressCache[key] = addr;
+        return addr;
     }
 
-    return 'Unknown Area';
+    try {
+        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+        const data = await res.json();
+        if (data) {
+            let addr = data.locality || data.city || data.principalSubdivision || data.countryName || "Unknown Area";
+            addressCache[key] = addr;
+            return addr;
+        }
+    } catch (e) {
+        console.error("Geocoding failed", e);
+    }
+    
+    addressCache[key] = "Unknown Area";
+    return "Unknown Area";
 }
 
 // ══════════════════════════════════════════════════════════
@@ -432,8 +448,8 @@ function createFeedItem(d) {
     const absoluteTime = formatAbsoluteTime(d.timestamp);
     const lat = d.latitude ? d.latitude.toFixed(4) : '--';
     const lng = d.longitude ? d.longitude.toFixed(4) : '--';
-    const locationName = getNearestLocationName(d.latitude, d.longitude);
-
+    const locSpanId = 'loc-' + (d.id || Math.random().toString(36).substr(2, 9));
+    
     el.innerHTML = `
         <div class="feed-dot"></div>
         <div class="feed-info">
@@ -443,7 +459,7 @@ function createFeedItem(d) {
                 <span class="feed-time-absolute">${absoluteTime}</span>
             </div>
             <div class="feed-location">
-                <span class="feed-location-name"><i class="fa-solid fa-location-dot"></i> ${locationName}</span>
+                <span class="feed-location-name" id="${locSpanId}"><i class="fa-solid fa-location-dot"></i> Loading location...</span>
                 <span class="feed-location-coords">${lat}° N, ${lng}° E</span>
             </div>
             <div class="feed-conf">
@@ -452,6 +468,11 @@ function createFeedItem(d) {
             </div>
         </div>
     `;
+
+    fetchAddress(d.latitude, d.longitude).then(addr => {
+        const span = el.querySelector(`#${locSpanId}`);
+        if (span) span.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${addr}`;
+    });
 
     // Click to fly to location on map
     if (d.latitude && d.longitude) {
@@ -482,7 +503,6 @@ function plotMarker(d) {
     });
 
     const confPct = ((d.confidence || 0) * 100).toFixed(1);
-    const locationName = getNearestLocationName(d.latitude, d.longitude);
     const relTime = formatRelativeTime(d.timestamp);
     const absTime = formatAbsoluteTime(d.timestamp);
 
@@ -491,13 +511,24 @@ function plotMarker(d) {
         .bindPopup(`
             <div class="detection-popup">
                 <div class="detection-popup-species">${d.species}</div>
+                <div class="detection-popup-location">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span>Loading address...</span>
+                </div>
+            </div>
+        `, { maxWidth: 260, className: 'detection-popup-container' });
+
+    fetchAddress(d.latitude, d.longitude).then(addr => {
+        marker.setPopupContent(`
+            <div class="detection-popup">
+                <div class="detection-popup-species">${d.species}</div>
                 <div class="detection-popup-confidence">
                     <span class="conf-label">Confidence</span>
                     <span class="conf-val">${confPct}%</span>
                 </div>
                 <div class="detection-popup-location">
                     <i class="fa-solid fa-location-dot"></i>
-                    <span>${locationName}</span>
+                    <span>${addr}</span>
                 </div>
                 <div class="detection-popup-coords">
                     ${d.latitude.toFixed(4)}° N, ${d.longitude.toFixed(4)}° E
@@ -507,7 +538,8 @@ function plotMarker(d) {
                     <span>${relTime} · ${absTime}</span>
                 </div>
             </div>
-        `, { maxWidth: 260, className: 'detection-popup-container' });
+        `);
+    });
 
     markers.push(marker);
     leafMap.flyTo([d.latitude, d.longitude], 14, { animate: true });
@@ -519,9 +551,12 @@ function plotMarker(d) {
 // ══════════════════════════════════════════════════════════
 function showToast(d) {
     const toast = document.getElementById('alert-toast');
-    const locationName = getNearestLocationName(d.latitude, d.longitude);
     document.getElementById('toast-species').textContent = d.species;
-    document.getElementById('toast-conf').textContent = `${((d.confidence || 0) * 100).toFixed(1)}% · ${locationName}`;
+    document.getElementById('toast-conf').textContent = `${((d.confidence || 0) * 100).toFixed(1)}% · Loading...`;
+
+    fetchAddress(d.latitude, d.longitude).then(addr => {
+        document.getElementById('toast-conf').textContent = `${((d.confidence || 0) * 100).toFixed(1)}% · ${addr}`;
+    });
 
     toast.classList.remove('hidden');
     setTimeout(() => toast.classList.add('hidden'), 4000);

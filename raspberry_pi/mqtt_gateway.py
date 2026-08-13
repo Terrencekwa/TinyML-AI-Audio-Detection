@@ -28,6 +28,19 @@ except Exception as e:
     print(f"Error loading config.json: {e}")
     SERVER_URL = "http://localhost:3000"
 
+# Fetch real-time location based on IP address
+REALTIME_LAT = None
+REALTIME_LNG = None
+try:
+    print("[*] Fetching real-time GPS coordinates via IP...")
+    loc_res = requests.get("http://ip-api.com/json/", timeout=5).json()
+    if loc_res.get("status") == "success":
+        REALTIME_LAT = loc_res.get("lat")
+        REALTIME_LNG = loc_res.get("lon")
+        print(f"[OK] Real-time Location found: {REALTIME_LAT}, {REALTIME_LNG}")
+except Exception as e:
+    print(f"[WARN] Could not fetch real-time location: {e}")
+
 def on_connect(client, userdata, flags, reason_code, properties):
     if reason_code == 0:
         print(f"[OK] Connected to Cloud MQTT Broker: {MQTT_BROKER}")
@@ -45,14 +58,16 @@ def on_message(client, userdata, msg):
         
         # Handle AI Detection Alerts
         if data.get("event_type") == "AI_DETECTION":
-            url = f"{SERVER_URL}/api/events"
-            # Format expected by the /api/events endpoint
+            url = f"{SERVER_URL}/api/detections"
+            # Format expected by the /api/detections endpoint
             payload = {
                 "device_id": data.get("device_id", "m5stack-remote-01"),
                 "timestamp": time.time(),
                 "event_type": "AI_DETECTION",
                 "species": data.get("species", "Unknown"),
-                "confidence": data.get("confidence", 0.0)
+                "confidence": data.get("confidence", 0.0),
+                "latitude": data.get("latitude", REALTIME_LAT or config.get("location", {}).get("latitude")),
+                "longitude": data.get("longitude", REALTIME_LNG or config.get("location", {}).get("longitude"))
             }
         else:
             # Handle regular telemetry
