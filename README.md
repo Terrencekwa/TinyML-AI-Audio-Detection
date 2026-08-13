@@ -10,6 +10,16 @@ This project uses TinyML to perform real-time, edge-based AI audio detection for
 
 ---
 
+## 💻 Hardware Requirements
+
+To fully run the end-to-end system, you will need:
+- **Sensor Node:** M5Stack CoreS3 (or similar ESP32-based microcontroller with a microphone).
+- **Edge Gateway:** Raspberry Pi (3B, 4, or 5) running Raspberry Pi OS.
+- **Server/Dashboard:** A PC, laptop, or server capable of running Node.js. (Can also be hosted on the Raspberry Pi if desired).
+- **Connectivity:** A local Wi-Fi network for the MQTT/HTTP communication.
+
+---
+
 ## 🛠 Setup & Installation
 
 ### 1. Dashboard Setup
