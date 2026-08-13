@@ -20,6 +20,24 @@ To fully run the end-to-end system, you will need:
 
 ---
 
+## 🌐 VPN Setup (Tailscale)
+
+If you are deploying the sensor node and gateway in a remote environment, you can use Tailscale to securely access your dashboard over the internet without port forwarding.
+
+1. Create an account at [Tailscale](https://tailscale.com/) and download the app on your computer, Raspberry Pi, and phone.
+2. Install Tailscale on the Raspberry Pi:
+   ```bash
+   curl -fsSL https://tailscale.com/install.sh | sh
+   ```
+3. Authenticate and bring the Tailscale network up:
+   ```bash
+   sudo tailscale up
+   ```
+4. Copy the Tailscale IP address assigned to your Raspberry Pi/Server (e.g., `100.x.y.z`).
+5. Update your `config.json` and Arduino code to point to this `100.x.y.z` address so all devices communicate over the secure VPN.
+
+---
+
 ## 🛠 Setup & Installation
 
 ### 1. Dashboard Setup
@@ -73,12 +91,11 @@ npm start
 The dashboard will be available at `http://localhost:3000`.
 
 **2. Start the Raspberry Pi Gateway**
-In a separate terminal window, start the gateway script. It has a simulated fallback mode if no Arduino is connected, meaning you can test it immediately!
+In a separate terminal window, start the MQTT gateway script. This acts as a bridge between the MQTT broker and the dashboard.
 ```bash
 cd raspberry_pi
-python pi_gateway.py
+python mqtt_gateway.py
 ```
-*(Alternatively, you can run `python mqtt_gateway.py` or `python ble_gateway.py` depending on your connection method.)*
 
 **3. Power on the Sensor Node**
 Connect the Arduino/M5Stack to power. It will begin listening to ambient audio, running inferencing, and sending telemetry data over serial or MQTT. The dashboard will automatically update with real-time graphs and Hornbill detection alerts.
